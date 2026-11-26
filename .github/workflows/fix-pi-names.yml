@@ -1,0 +1,19 @@
+name: Fix Pi file names
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rename .img.xz.xz to .img.xz on the pi release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPO/releases/tags/pi" --jq '.assets[] | "\(.id) \(.name)"' | while read -r id name; do
+            case "$name" in
+              *.img.xz.xz) new="${name%.xz}"; echo "Renaming $name -> $new"; gh api -X PATCH "repos/$REPO/releases/assets/$id" -f name="$new" --jq .name ;;
+              *) echo "OK: $name" ;;
+            esac
+          done
